@@ -45,7 +45,7 @@ class ModalForm extends Form {
         $pk = new ModalFormRequestPacket();
         $pk->formId = $this->id;
         $pk->formData = json_encode($this->data);
-        $player->getNetworkSession()->handleDataPacket($pk);
+        $player->getNetworkSession()->sendDataPacket($pk);
         $this->playerName = $player->getName();
     }
 
