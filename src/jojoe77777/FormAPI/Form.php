@@ -2,33 +2,51 @@
 
 declare(strict_types = 1);
 
-namespace jojoe77777\FormAPI;
+namespace FormAPI;
 
-use pocketmine\form\Form as IForm;
-use pocketmine\Player;
+use pocketmine\network\mcpe\protocol\ModalFormRequestPacket;
+use pocketmine\player\Player;
 
-abstract class Form implements IForm{
+abstract class Form {
 
+    /** @var int */
+    public $id;
     /** @var array */
-    protected $data = [];
-    /** @var callable|null */
+    private $data = [];
+    /** @var string */
+    public $playerName;
+    /** @var callable */
     private $callable;
 
     /**
-     * @param callable|null $callable
+     * @param int $id
+     * @param callable $callable
      */
-    public function __construct(?callable $callable) {
+    public function __construct(int $id, ?callable $callable) {
+        $this->id = $id;
         $this->callable = $callable;
     }
 
     /**
-     * @deprecated
-     * @see Player::sendForm()
-     *
+     * @return int
+     */
+    public function getId() : int {
+        return $this->id;
+    }
+
+    /**
      * @param Player $player
      */
     public function sendToPlayer(Player $player) : void {
-        $player->sendForm($this);
+        $pk = new ModalFormRequestPacket();
+        $pk->formId = $this->id;
+        $pk->formData = json_encode($this->data);
+        $player->getNetworkSession()->handleDataPacket($pk);
+        $this->playerName = $player->getName();
+    }
+
+    public function isRecipient(Player $player) : bool {
+        return $player->getName() === $this->playerName;
     }
 
     public function getCallable() : ?callable {
@@ -39,18 +57,6 @@ abstract class Form implements IForm{
         $this->callable = $callable;
     }
 
-    public function handleResponse(Player $player, $data) : void {
-        $this->processData($data);
-        $callable = $this->getCallable();
-        if($callable !== null) {
-            $callable($player, $data);
-        }
-    }
-
     public function processData(&$data) : void {
-    }
-
-    public function jsonSerialize(){
-        return $this->data;
     }
 }

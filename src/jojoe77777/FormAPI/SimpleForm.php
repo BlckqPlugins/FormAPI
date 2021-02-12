@@ -2,27 +2,53 @@
 
 declare(strict_types = 1);
 
-namespace jojoe77777\FormAPI;
+namespace FormAPI;
+
+use pocketmine\network\mcpe\protocol\ModalFormRequestPacket;
+use pocketmine\player\Player;
 
 class SimpleForm extends Form {
 
     const IMAGE_TYPE_PATH = 0;
     const IMAGE_TYPE_URL = 1;
 
+    /** @var int */
+    public $id;
+    /** @var array */
+    private $data = [];
     /** @var string */
     private $content = "";
-
+    /** @var string */
+    public $playerName;
     private $labelMap = [];
 
     /**
-     * @param callable|null $callable
+     * @param int $id
+     * @param callable $callable
      */
-    public function __construct(?callable $callable) {
-        parent::__construct($callable);
+    public function __construct(int $id, ?callable $callable) {
+        parent::__construct($id, $callable);
         $this->data["type"] = "form";
         $this->data["title"] = "";
         $this->data["content"] = $this->content;
-        $this->data["buttons"] = [];
+    }
+
+    /**
+     * @return int
+     */
+    public function getId() : int {
+        return $this->id;
+    }
+
+    /**
+     * @param Player $player
+     */
+    public function sendToPlayer(Player $player) : void {
+        $pk = new ModalFormRequestPacket();
+        $pk->formId = $this->id;
+        $pk->formData = json_encode($this->data);
+        $player->getNetworkSession()->handleDataPacket($pk);
+        $this->playerName = $player->getName();
     }
 
     public function processData(&$data) : void {
